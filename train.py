@@ -113,6 +113,28 @@ ctx = nullcontext() if device_type == 'cpu' else torch.amp.autocast(device_type=
 
 # poor man's data loader
 data_dir = os.path.join('data', dataset)
+"""note
+① data 是 1 维流，前 30 个 token 解码出：'First Citizen:\nBefore we proce'
+
+② 抽 3 个随机起点：ix = [249523, 621429, 570665]
+
+③ 切出来的两张表：
+
+   row0  i=249523
+     x[0] = "y of Edward's childr"          ← 题面（20 个字符）
+     y[0] = " of Edward's childre"          ← 答案（同 20 个字符，错开一位）
+
+   row1  i=621429
+     x[1] = 'ows repaid,\nHave rob'
+     y[1] = 'ws repaid,\nHave robb'
+
+   row2  i=570665
+     x[2] = '.\n\nSecond Watchman:\n'        ← 注意跨了换行和场景标题
+     y[2] = '\n\nSecond Watchman:\nH'
+
+④ 错位校验 y[r][j] == x[r][j+1]   → 全部成立
+   每行 y 的最后一位，正好是片段之后的下一个字符 → 全部成立
+"""
 def get_batch(split):
     # We recreate np.memmap every batch to avoid a memory leak, as per
     # https://stackoverflow.com/questions/45132940/numpy-memmap-memory-usage-want-to-iterate-once/61472122#61472122
